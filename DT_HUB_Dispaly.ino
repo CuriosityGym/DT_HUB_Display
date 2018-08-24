@@ -43,6 +43,7 @@ char auth[] = "7eac5c97945b4a41ad5188072cb3aaee";
 char ssid[] = "DT_LAB";
 char passwd[] = "fthu@050318";
  String data="";
+ String defautMsg= "DT Lab is open, Lets make something interesting";
 Adafruit_NeoMatrix matrix = Adafruit_NeoMatrix(64, 8, PIN,
   NEO_MATRIX_TOP    + NEO_MATRIX_LEFT + 
   NEO_MATRIX_COLUMNS + NEO_MATRIX_ZIGZAG,
@@ -55,6 +56,7 @@ const uint16_t colors[] = {
 int x    = matrix.width();
 int pass = 0;
 int val = 0;
+bool dataRcvd = false;
 // Attach virtual serial terminal to Virtual Pin V1
 WidgetTerminal terminal(V1);
 
@@ -64,7 +66,7 @@ BLYNK_WRITE(V1)
 {
   data = param.asStr();
   Serial.println(data);
-   
+  dataRcvd = true;
   // if you type "Marco" into Terminal Widget - it will respond: "Polo:"
  // if (String("Marco") == param.asStr()) {
  //   terminal.println("You said: 'Marco'") ;
@@ -110,23 +112,39 @@ void setup()
   terminal.println(F("Type 'Marco' and get a reply, or type"));
   terminal.println(F("anything else and get it printed back."));
   terminal.flush();
+  
 }
 
 void loop()
 {
+  
   Blynk.run();
+  if(dataRcvd == false)
+    {
+     matrix.fillScreen(0);
+     matrix.setCursor(x, 0);
+     matrix.print(defautMsg);
+     val = defautMsg.length();
+     val= val*7;
+     if(--x < -val) {
+        x = matrix.width();
+     
+        if(++pass >= 8) pass = 0;
+        matrix.setTextColor(colors[pass]);
+      }
+    }
+  if(dataRcvd == true){  
   matrix.fillScreen(0);
   matrix.setCursor(x, 0);
   matrix.print(data);
   val = data.length();
   val= val*7;
-  if(--x < -val
-  ) {
+  if(--x < -val) {
     x = matrix.width();
  
     if(++pass >= 8) pass = 0;
     matrix.setTextColor(colors[pass]);
-  }
+  }}
   matrix.show();
   delay(30);
 }
