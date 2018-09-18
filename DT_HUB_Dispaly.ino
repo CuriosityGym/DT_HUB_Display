@@ -30,6 +30,8 @@
 
 #include <ESP8266WiFi.h>
 #include <BlynkSimpleEsp8266.h>
+#include <TimeLib.h>
+#include <WidgetRTC.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_NeoMatrix.h>
 #include <Adafruit_NeoPixel.h>
@@ -42,8 +44,17 @@ char auth[] = "7eac5c97945b4a41ad5188072cb3aaee";
 // Set password to "" for open networks.
 char ssid[] = "DT_LAB";
 char passwd[] = "fthu@050318";
+
+BlynkTimer timer;
+
+WidgetRTC rtc;
+
+String hours="";
+String minuits="";
+int h=0;
+int m=0;
  String data="";
- String defautMsg= "DT Lab is open, Lets make something interesting";
+ String defautMsg= "Design Thinking Hub is open, Lets make something interesting";
 Adafruit_NeoMatrix matrix = Adafruit_NeoMatrix(64, 8, PIN,
   NEO_MATRIX_TOP    + NEO_MATRIX_LEFT + 
   NEO_MATRIX_COLUMNS + NEO_MATRIX_ZIGZAG,
@@ -60,12 +71,78 @@ bool dataRcvd = false;
 // Attach virtual serial terminal to Virtual Pin V1
 WidgetTerminal terminal(V1);
 
+
+// Digital clock display of the time
+void clockDisplay()
+{
+  // You can call hour(), minute(), ... at any time
+  // Please see Time library examples for details
+
+  String currentTime = String(hour()) + ":" + minute() + ":" + second();
+  String currentDate = String(day()) + " " + month() + " " + year();
+  Serial.print("Current time: ");
+  Serial.print(currentTime);
+  Serial.print(" ");
+  Serial.print(currentDate);
+  Serial.println();
+  m=minute();
+  h=hour();
+  // Send time to the App
+  Blynk.virtualWrite(V1, currentTime);
+  // Send date to the App
+  Blynk.virtualWrite(V2, currentDate);
+}
+int roundMinuits(int mnt){
+  if (mnt <= 10) mnt = 10;
+  if (mnt > 10 && mnt <= 20) mnt = 20;
+  if (mnt > 20 && mnt <= 30) mnt = 30;
+  if (mnt > 30 && mnt <= 40) mnt = 40;
+  if (mnt > 40 && mnt <= 50) mnt = 50;
+  if (mnt > 50 && mnt < 60) mnt = 00;
+  return mnt;
+}
 // You can send commands from Terminal to your hardware. Just use
 // the same Virtual Pin as your Terminal Widget
 BLYNK_WRITE(V1)
 {
   data = param.asStr();
   Serial.println(data);
+  if(data == "sixty"){
+    h=(h+1)%12;
+    hours = String(h);
+    m = roundMinuits(m);
+    minuits = String(m);
+    if(m ==0) {minuits = "00";}
+    data="Design Thinking Hub is closed. Hub will open at "+hours +":"+minuits+"pm";
+    Serial.println(data);
+  }
+  if(data == "thirty"){
+    int mint = (m+30)%60;
+    int hrs= h;
+    hrs= hrs%12;
+    if((m+30)>59) {
+      hrs= hrs+1;
+      
+    }
+    hours = String(hrs);
+    mint = roundMinuits(mint);
+    minuits = String(mint);
+    if(mint =0) {minuits = "00";}
+    data="Design Thinking Hub is closed. Hub will open at "+hours +":"+minuits+"pm";
+    Serial.println(data);
+  }
+
+  if(data == "LT"){
+    int hrs=h;
+    hrs= (hrs+1)%12;
+    
+    hours = String(hrs);
+    m = roundMinuits(m);
+    minuits = String(m);
+    if(m ==0) {minuits = "00";}
+    data ="Lunch Time. Hub will open at "+hours +":"+minuits+"pm";
+    Serial.println(data);
+  }
   dataRcvd = true;
   // if you type "Marco" into Terminal Widget - it will respond: "Polo:"
  // if (String("Marco") == param.asStr()) {
@@ -96,6 +173,7 @@ void setup()
 {
   // Debug console
   Serial.begin(9600);
+  rtc.begin();
   matrix.begin();
   matrix.setTextWrap(false);
   matrix.setBrightness(5);
@@ -109,9 +187,14 @@ void setup()
   // your hardware gets connected to Blynk Server
   terminal.println(F("Blynk v" BLYNK_VERSION ": Device started"));
   terminal.println(F("-------------"));
-  terminal.println(F("Type 'Marco' and get a reply, or type"));
-  terminal.println(F("anything else and get it printed back."));
+  terminal.println(F("Smart Display"));
+  //terminal.println(F("anything else and get it printed back."));
   terminal.flush();
+   // Begin synchronizing time
+  
+
+  // Display digital clock every 10 seconds
+  timer.setInterval(10000L, clockDisplay);
   
 }
 
@@ -119,6 +202,7 @@ void loop()
 {
   
   Blynk.run();
+  timer.run();
   if(dataRcvd == false)
     {
      matrix.fillScreen(0);
