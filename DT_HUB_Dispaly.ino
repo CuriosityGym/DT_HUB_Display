@@ -108,11 +108,12 @@ BLYNK_WRITE(V1)
   data = param.asStr();
   Serial.println(data);
   if(data == "sixty"){
-    h=(h+1)%12;
-    hours = String(h);
+    int hr=h;
+    hr=(hr+1)%12;
     m = roundMinuits(m);
     minuits = String(m);
-    if(m ==0) {minuits = "00";}
+    if(m ==0) {minuits = "00"; hr=hr+1;}
+    hours = String(hr);
     data="Design Thinking Hub is closed. Hub will open at "+hours +":"+minuits+"pm";
     Serial.println(data);
   }
@@ -120,14 +121,21 @@ BLYNK_WRITE(V1)
     int mint = (m+30)%60;
     int hrs= h;
     hrs= hrs%12;
-    if((m+30)>59) {
+    if((m+30)>=59) {
       hrs= hrs+1;
       
     }
-    hours = String(hrs);
+    
+   /* if (mint <= 10) mint = 10;
+    if (mint > 10 && mint <= 20) mint = 20;
+    if (mint > 20 && mint <= 30) mint = 30;
+    if (mint > 30 && mint <= 40) mint = 40;
+    if (mint > 40 && mint <= 50) mint = 50;
+    if (mint > 50 && mint < 60)  mint = 55;*/
     mint = roundMinuits(mint);
     minuits = String(mint);
-    if(mint =0) {minuits = "00";}
+    if(mint ==0) {minuits = "00";hrs=hrs+1;}
+    hours = String(hrs);
     data="Design Thinking Hub is closed. Hub will open at "+hours +":"+minuits+"pm";
     Serial.println(data);
   }
@@ -136,10 +144,11 @@ BLYNK_WRITE(V1)
     int hrs=h;
     hrs= (hrs+1)%12;
     
-    hours = String(hrs);
+    
     m = roundMinuits(m);
     minuits = String(m);
-    if(m ==0) {minuits = "00";}
+    if(m ==0) {minuits = "00";hrs = hrs+1;}
+    hours = String(hrs);
     data ="Lunch Time. Hub will open at "+hours +":"+minuits+"pm";
     Serial.println(data);
   }
